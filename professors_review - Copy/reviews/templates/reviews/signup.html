@@ -1,0 +1,134 @@
+{% extends 'reviews/base.html' %}
+
+{% block title %}ثبت‌نام{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0 text-center">ثبت‌نام در سامانه</h4>
+            </div>
+            
+            <div class="card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label">نام کاربری</label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.username.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">نام کاربری باید منحصربه‌فرد باشد</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_password1" class="form-label">رمز عبور</label>
+                        {{ form.password1 }}
+                        {% if form.password1.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.password1.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_password2" class="form-label">تکرار رمز عبور</label>
+                        {{ form.password2 }}
+                        {% if form.password2.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.password2.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="mb-3">
+                        <div class="alert alert-info">
+                            <h6 class="alert-heading">سوال ریاضی</h6>
+                            {% if challenge_question %}
+                                <p class="mb-2 fw-bold" id="challenge-question">
+                                    {{ challenge_question }}
+                                </p>
+                                <input type="hidden" name="challenge_question" value="{{ challenge_question }}">
+                            {% elif form.challenge_question.value %}
+                                <p class="mb-2 fw-bold" id="challenge-question">
+                                    {{ form.challenge_question.value }}
+                                </p>
+                                <input type="hidden" name="challenge_question" value="{{ form.challenge_question.value }}">
+                            {% endif %}
+                            <p class="mb-0 small text-muted">لطفاً به این سوال ریاضی پاسخ دهید.</p>
+                        </div>
+                        
+                        <label for="id_challenge_answer" class="form-label">پاسخ شما (فقط عدد)</label>
+                        {{ form.challenge_answer }}
+                        {% if form.challenge_answer.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.challenge_answer.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">{{ form.challenge_answer.help_text }}</div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">ثبت‌نام</button>
+                        <a href="{% url 'reviews:login' %}" class="btn btn-outline-secondary">
+                            قبلاً ثبت‌نام کرده‌اید؟ ورود
+                        </a>
+                    </div>
+                </form>
+                
+                <hr class="my-4">
+                
+                <div class="alert alert-warning">
+                    <h6 class="alert-heading">توجه!</h6>
+                    <ul class="mb-0 small">
+                        <li>هر کاربر می‌تواند حداکثر ۴ نظر و ۴ پرسش در روز ارسال کند</li>
+                        <li>نظرات و پرسش‌ها پس از تأیید ادمین نمایش داده می‌شوند</li>
+                        <li>لطفاً از زبان فارسی استفاده کنید</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border-radius: 10px;
+}
+.form-control:focus {
+    border-color: #4a148c;
+    box-shadow: 0 0 0 0.2rem rgba(74, 20, 140, 0.25);
+}
+</style>
+{% endblock %}

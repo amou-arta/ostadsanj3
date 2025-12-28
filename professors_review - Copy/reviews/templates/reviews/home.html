@@ -1,0 +1,110 @@
+{% extends 'reviews/base.html' %}
+
+{% block title %}لیست اساتید{% endblock %}
+
+{% block content %}
+<h3 class="mb-4">لیست اساتید</h3>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <input type="text"
+               id="search-input"
+               class="form-control"
+               placeholder="نام یا دپارتمان استاد را تایپ کنید...">
+    </div>
+    <div class="col-md-6">
+        <a href="{% url 'reviews:search_professors' %}" class="btn btn-outline-primary">
+            جستجوی پیشرفته
+        </a>
+    </div>
+</div>
+
+<div class="row" id="professors-container">
+    {% for professor in professors %}
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="text-center mt-3">
+                    <img src="{{ professor.get_image_url }}" 
+                         alt="{{ professor.name }}"
+                         class="rounded-circle border"
+                         style="width: 120px; height: 120px; object-fit: cover;">
+                </div>
+                <div class="card-body text-center">
+                    <h5 class="card-title">{{ professor.name }}</h5>
+
+                    {% if professor.department %}
+                        <p class="card-text text-muted">
+                            دپارتمان: {{ professor.department }}
+                        </p>
+                    {% endif %}
+
+                    {% if professor.average_rating %}
+                        <div class="mb-2">
+                            <strong>میانگین امتیاز:</strong>
+                            <span class="text-warning">
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= professor.average_rating %}
+                                        ★
+                                    {% else %}
+                                        ☆
+                                    {% endif %}
+                                {% endfor %}
+                            </span>
+                            ({{ professor.average_rating|floatformat:1 }})
+                        </div>
+                    {% else %}
+                        <div class="mb-2">
+                            <span class="text-muted">بدون امتیاز</span>
+                        </div>
+                    {% endif %}
+
+                    {% if professor.bio and professor.bio|length > 100 %}
+                        <p class="card-text small text-muted">
+                            {{ professor.bio|truncatechars:100 }}
+                        </p>
+                    {% elif professor.bio %}
+                        <p class="card-text small text-muted">
+                            {{ professor.bio }}
+                        </p>
+                    {% endif %}
+
+                    <a href="{% url 'reviews:professor_detail' professor.id %}"
+                       class="btn btn-primary btn-sm mt-2">
+                        مشاهده پروفایل و نظرات
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                استادی یافت نشد.
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<script>
+const input = document.getElementById('search-input');
+const container = document.getElementById('professors-container');
+
+input.addEventListener('keyup', function () {
+    const query = input.value;
+
+    fetch(`/live-search/?query=${query}`)
+        .then(response => response.json())
+        .then(data => {
+            container.innerHTML = data.html;
+        });
+});
+</script>
+
+<style>
+.card {
+    transition: transform 0.2s;
+}
+.card:hover {
+    transform: translateY(-5px);
+}
+</style>
+{% endblock %}

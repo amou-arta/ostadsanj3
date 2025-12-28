@@ -1,0 +1,15 @@
+<div class="evaluation-score-item mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-1">
+        <span class="fw-bold">{{ label }}</span>
+        <span class="text-success">{{ value }}/5</span>
+    </div>
+    <div class="stars small">
+        {% for i in "12345" %}
+            {% if forloop.counter <= value %}
+                <i class="bi bi-star-fill text-warning"></i>
+            {% else %}
+                <i class="bi bi-star text-warning"></i>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>

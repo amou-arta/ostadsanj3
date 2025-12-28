@@ -1,0 +1,22 @@
+{% extends 'reviews/base.html' %}
+
+{% block content %}
+<h2>جستجوی اساتید</h2>
+
+<form method="get" action="{% url 'reviews:search_professors' %}">
+    {{ form.query }}
+    <button type="submit">جستجو</button>
+</form>
+
+{% if results %}
+    <h3>نتایج جستجو:</h3>
+    <ul>
+    {% for professor in results %}
+        <li><a href="{% url 'reviews:professor_detail' professor.pk %}">{{ professor.name }} - {{ professor.department }}</a></li>
+    {% endfor %}
+    </ul>
+{% elif form.is_bound %}
+    <p>استادی با این مشخصات یافت نشد.</p>
+{% endif %}
+
+{% endblock %}

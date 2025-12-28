@@ -1,0 +1,2343 @@
+{% extends 'reviews/base.html' %}
+
+{% block title %}{{ professor.name }}{% endblock %}
+
+{% block content %}
+
+<div class="row">
+    <!-- ==================== پانل اطلاعات استاد (سمت راست) ==================== -->
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-lg border-0 professor-card">
+            <div class="card-body text-center p-4">
+                <!-- تصویر استاد -->
+                <div class="professor-avatar mb-4">
+                    <img src="{{ professor.get_image_url }}" 
+                         alt="{{ professor.name }}"
+                         class="img-fluid rounded-circle shadow"
+                         style="width: 180px; height: 180px; object-fit: cover; border: 4px solid #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                </div>
+                
+                <!-- نام استاد -->
+                <h2 class="professor-name mb-3">
+                    <span class="text-gradient-primary">{{ professor.name }}</span>
+                </h2>
+                
+                <!-- دپارتمان -->
+                {% if professor.department %}
+                    <div class="department-badge mb-4">
+                        <span class="badge bg-gradient-secondary px-3 py-2 rounded-pill">
+                            <i class="bi bi-building me-2"></i>{{ professor.department }}
+                        </span>
+                    </div>
+                {% endif %}
+
+                <!-- میانگین امتیاز -->
+{% if professor.average_rating %}
+    <div class="average-rating-container mb-4">
+        <div class="d-flex align-items-center justify-content-center mb-2">
+            <span class="display-4 fw-bold text-primary me-2">{{ professor.average_rating|floatformat:1 }}</span>
+            <div class="text-start">
+                <div class="stars-rating mb-1">
+                    {% with rating=professor.average_rating %}
+                        {% for i in "12345" %}
+                            {% if rating >= forloop.counter %}
+                                <!-- ستاره کامل -->
+                                <i class="bi bi-star-fill text-warning"></i>
+                            {% elif rating >= forloop.counter|add:-0.5 %}
+                                <!-- ستاره نیمه -->
+                                <i class="bi bi-star-half text-warning"></i>
+                            {% else %}
+                                <!-- ستاره خالی -->
+                                <i class="bi bi-star text-warning"></i>
+                            {% endif %}
+                        {% endfor %}
+                    {% endwith %}
+                </div>
+                <small class="text-muted">میانگین {{ professor.review_count }} نظر</small>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+                <!-- آمار کلی -->
+                <div class="stats-grid mb-4">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="stat-card p-3 rounded text-center">
+                                <i class="bi bi-chat-text-fill fs-4 text-info mb-2"></i>
+                                <h5 class="mb-1">{{ professor.review_count }}</h5>
+                                <small class="text-muted">نظر</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card p-3 rounded text-center">
+                                <i class="bi bi-question-circle-fill fs-4 text-primary mb-2"></i>
+                                <h5 class="mb-1">{{ professor.question_count }}</h5>
+                                <small class="text-muted">پرسش</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- دکمه بازگشت -->
+                <div class="mt-4">
+                    <a href="{% url 'reviews:home' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-arrow-right"></i> بازگشت به لیست اساتید
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- بیوگرافی در پانل مجزا -->
+        {% if professor.bio %}
+            <div class="card shadow-sm border-0 mt-4">
+                <div class="card-header bg-gradient-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-badge me-2"></i>بیوگرافی
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="bio-content" style="max-height: 200px; overflow-y: auto;">
+                        {{ professor.bio|linebreaks }}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- ==================== پانل اصلی محتوا (سمت چپ) ==================== -->
+    <div class="col-md-8">
+        <!-- نمایش پیام‌های سیستم -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4 border-0 shadow-sm">
+                    <div class="d-flex align-items-center">
+                        {% if message.tags == 'success' %}
+                            <i class="bi bi-check-circle-fill fs-4 me-3"></i>
+                        {% elif message.tags == 'error' %}
+                            <i class="bi bi-exclamation-circle-fill fs-4 me-3"></i>
+                        {% elif message.tags == 'warning' %}
+                            <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+                        {% else %}
+                            <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+                        {% endif %}
+                        <div class="flex-grow-1">
+                            {{ message }}
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- نمایش محدودیت‌های روزانه کاربر -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-gradient-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clock-history me-2"></i>محدودیت‌های روزانه
+                    </h5>
+                    <span class="badge bg-warning">
+                        <i class="bi bi-info-circle me-1"></i>بازنشانی ساعت ۰۰:۰۰
+                    </span>
+                </div>
+            </div>
+            <div class="card-body p-3">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="limit-card {% if review_limit.reached_limit %}limit-reached{% else %}limit-available{% endif %}">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-chat-text me-2"></i>نظرات
+                                    </h6>
+                                    <small class="text-muted">حداکثر {{ review_limit.total }} نظر در روز</small>
+                                </div>
+                                <span class="limit-badge">{{ review_limit.remaining }}/{{ review_limit.total }}</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar {% if review_limit.reached_limit %}bg-danger{% else %}bg-success{% endif %}" 
+                                     style="width: {% widthratio review_limit.remaining review_limit.total 100 %}%"></div>
+                            </div>
+                            {% if review_limit.reached_limit %}
+                                <div class="limit-message mt-2">
+                                    <small class="text-danger">
+                                        <i class="bi bi-exclamation-circle me-1"></i>
+                                        امروز به حد مجاز رسیده‌اید
+                                    </small>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="limit-card {% if question_limit.reached_limit %}limit-reached{% else %}limit-available{% endif %}">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-question-circle me-2"></i>پرسش‌ها
+                                    </h6>
+                                    <small class="text-muted">حداکثر {{ question_limit.total }} پرسش در روز</small>
+                                </div>
+                                <span class="limit-badge">{{ question_limit.remaining }}/{{ question_limit.total }}</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar {% if question_limit.reached_limit %}bg-danger{% else %}bg-info{% endif %}" 
+                                     style="width: {% widthratio question_limit.remaining question_limit.total 100 %}%"></div>
+                            </div>
+                            {% if question_limit.reached_limit %}
+                                <div class="limit-message mt-2">
+                                    <small class="text-danger">
+                                        <i class="bi bi-exclamation-circle me-1"></i>
+                                        امروز به حد مجاز رسیده‌اید
+                                    </small>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3 pt-3 border-top">
+                    <small class="text-muted">
+                        <i class="bi bi-shield-check me-1"></i>
+                        این محدودیت‌ها برای جلوگیری از اسپم و حفظ کیفیت محتوا اعمال شده‌اند.
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== بخش تب‌ها ==================== -->
+        <div class="card shadow border-0">
+            <div class="card-header bg-white border-0 p-0">
+                <!-- تب‌ها با استایل جدید -->
+                <ul class="nav nav-tabs nav-tabs-modern" id="professorTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews" 
+                                type="button" role="tab" aria-controls="reviews" aria-selected="true">
+                            <i class="bi bi-chat-square-text-fill me-2"></i>
+                            <span>نظرسنجی</span>
+                            {% if professor.review_count %}
+                                <span class="badge bg-primary ms-1">{{ professor.review_count }}</span>
+                            {% endif %}
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="questions-tab" data-bs-toggle="tab" data-bs-target="#questions" 
+                                type="button" role="tab" aria-controls="questions" aria-selected="false">
+                            <i class="bi bi-question-octagon-fill me-2"></i>
+                            <span>پرسش و پاسخ</span>
+                            {% if professor.question_count %}
+                                <span class="badge bg-info ms-1">{{ professor.question_count }}</span>
+                            {% endif %}
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="evaluation-tab" data-bs-toggle="tab" data-bs-target="#evaluation" 
+                                type="button" role="tab" aria-controls="evaluation" aria-selected="false">
+                            <i class="bi bi-bar-chart-line-fill me-2"></i>
+                            <span>ارزیابی کیفی</span>
+                            {% if has_evaluations %}
+                                <span class="badge bg-success ms-1">{{ evaluation_stats.total_evaluations }}</span>
+                            {% endif %}
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="card-body p-4">
+                <!-- محتوای تب‌ها -->
+                <div class="tab-content">
+                    <!-- ==================== تب نظرات ==================== -->
+                    <div class="tab-pane fade show active" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
+                        <!-- پیام‌های مخصوص نظرات -->
+{% if messages and request.GET.tab == 'reviews' or not request.GET.tab %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4 border-0 shadow-sm">
+            <i class="bi bi-{% if message.tags == 'success' %}check-circle{% else %}exclamation-circle{% endif %}-fill me-2"></i> 
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+                        <!-- فرم ثبت نظر جدید -->
+                        <div class="card card-form mb-5">
+                            <div class="card-header bg-gradient-primary text-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">
+                                        <i class="bi bi-pencil-square me-2"></i>ثبت نظر جدید
+                                    </h5>
+                                    {% if review_limit.reached_limit %}
+                                        <span class="badge bg-warning">
+                                            <i class="bi bi-exclamation-triangle me-1"></i>محدودیت روزانه
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                {% if review_limit.reached_limit %}
+                                    <div class="limit-reached-message text-center py-4">
+                                        <i class="bi bi-clock-history fs-1 text-warning mb-3"></i>
+                                        <h5 class="text-warning">حد مجاز امروز تکمیل شده</h5>
+                                        <p class="text-muted">شما امروز {{ review_limit.total }} نظر ارسال کرده‌اید.</p>
+                                        <small class="text-muted">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            فردا می‌توانید مجدد نظر ارسال کنید.
+                                        </small>
+                                    </div>
+                                {% else %}
+                                    <form method="post" action="{% url 'reviews:professor_detail' professor.pk %}?tab=reviews" id="review-form">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="form_type" value="review">
+
+                                        <div class="mb-4">
+                                            <label for="id_text" class="form-label fw-bold">
+                                                <i class="bi bi-chat-text me-2"></i>متن نظر
+                                            </label>
+                                            <textarea name="text" id="id_text" class="form-control form-control-lg" rows="4" 
+                                                      placeholder="تجربه خود از تدریس این استاد را به اشتراک بگذارید..." 
+                                                      minlength="20" maxlength="2000" required>{{ review_form.text.value|default:'' }}</textarea>
+                                            {% if review_form.text.errors %}
+                                                <div class="text-danger small mt-1">
+                                                    {% for error in review_form.text.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                            <div class="form-text text-end">
+                                                <span id="review-char-count">0</span> / 2000 کاراکتر
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-4">
+                                            <label class="form-label fw-bold">
+                                                <i class="bi bi-star me-2"></i>امتیازدهی
+                                            </label>
+                                            <div class="star-rating-widget">
+                                                <div class="stars mb-2">
+                                                    {% for i in "54321" %}
+                                                        <input type="radio" name="rating" id="star{{ i }}" value="{{ i }}" 
+                                                               {% if review_form.rating.value == i %}checked{% endif %}>
+                                                        <label for="star{{ i }}" title="{{ i }} ستاره">
+                                                            <i class="bi bi-star"></i>
+                                                        </label>
+                                                    {% endfor %}
+                                                </div>
+                                                <div class="rating-labels">
+                                                    <!-- می‌توانید برچسب‌ها را اینجا اضافه کنید -->
+                                                </div>
+                                            </div>
+                                            {% if review_form.rating.errors %}
+                                                <div class="text-danger small mt-1">
+                                                    {% for error in review_form.rating.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <button type="submit" class="btn btn-success btn-lg px-4" id="review-submit-btn">
+                                                <i class="bi bi-send me-2"></i>ثبت نظر
+                                            </button>
+                                            <div class="remaining-badge">
+                                                <span class="badge bg-light text-dark border">
+                                                    <i class="bi bi-arrow-counterclockwise me-1"></i>
+                                                    {{ review_limit.remaining }} نظر باقی‌مانده
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- لیست نظرات -->
+                        <h4 class="section-title mb-4">
+                            <i class="bi bi-chat-left-text-fill me-2"></i>نظرات کاربران
+                            {% if reviews %}
+                                <small class="text-muted ms-2">({{ reviews|length }} نظر)</small>
+                            {% endif %}
+                        </h4>
+
+                        {% for review in reviews %}
+                        <div class="review-card card shadow-sm border-0 mb-3">
+                            <div class="card-body">
+                                <!-- هدر نظر -->
+                                <div class="review-header d-flex justify-content-between align-items-center mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="user-avatar me-3">
+                                            <div class="avatar-circle bg-primary text-white">
+                                                {{ review.user.username|slice:":1"|upper }}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold">{{ review.user.username }}</h6>
+                                            <small class="text-muted">
+                                                <i class="bi bi-clock me-1"></i>
+                                                {{ review.created_at|date:"Y/m/d - H:i" }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="review-rating">
+                                        <div class="stars small">
+                                            {% for i in "12345" %}
+                                                {% if forloop.counter <= review.rating %}
+                                                    <i class="bi bi-star-fill text-warning"></i>
+                                                {% else %}
+                                                    <i class="bi bi-star text-warning"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                        <small class="text-muted">({{ review.rating }}/5)</small>
+                                    </div>
+                                </div>
+
+                                <!-- متن نظر -->
+                                <div class="review-content mb-3">
+                                    <p class="mb-0">{{ review.text|linebreaks }}</p>
+                                </div>
+
+                                <!-- اقدامات (لایک/دیس‌لایک) -->
+                                <div class="review-actions">
+                                    <div class="vote-buttons d-flex align-items-center">
+                                        <button class="btn btn-sm btn-outline-success vote-review-btn me-2" 
+                                                onclick="voteReview({{ review.id }}, 1)"
+                                                id="review-{{ review.id }}-upvote">
+                                            <i class="bi bi-hand-thumbs-up me-1"></i>
+                                            <span id="review-{{ review.id }}-likes">{{ review.likes_count }}</span>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger vote-review-btn" 
+                                                onclick="voteReview({{ review.id }}, -1)"
+                                                id="review-{{ review.id }}-downvote">
+                                            <i class="bi bi-hand-thumbs-down me-1"></i>
+                                            <span id="review-{{ review.id }}-dislikes">{{ review.dislikes_count }}</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="empty-state text-center py-5">
+                            <i class="bi bi-chat-square-text fs-1 text-muted mb-3"></i>
+                            <h5 class="text-muted">هنوز نظری ثبت نشده است</h5>
+                            <p class="text-muted">اولین نفری باشید که نظر می‌دهید.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- ==================== تب پرسش و پاسخ ==================== -->
+                    <div class="tab-pane fade" id="questions" role="tabpanel" aria-labelledby="questions-tab">
+                        <!-- پیام‌های مخصوص پرسش‌ها -->
+{% if messages and request.GET.tab == 'questions' %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4 border-0 shadow-sm">
+            <i class="bi bi-{% if message.tags == 'success' %}check-circle{% else %}exclamation-circle{% endif %}-fill me-2"></i> 
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+                        <!-- فرم ثبت پرسش جدید -->
+                        <div class="card card-form mb-5">
+                            <div class="card-header bg-gradient-info text-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">
+                                        <i class="bi bi-question-circle-fill me-2"></i>ثبت پرسش جدید
+                                    </h5>
+                                    {% if question_limit.reached_limit %}
+                                        <span class="badge bg-warning">
+                                            <i class="bi bi-exclamation-triangle me-1"></i>محدودیت روزانه
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                {% if question_limit.reached_limit %}
+                                    <div class="limit-reached-message text-center py-4">
+                                        <i class="bi bi-clock-history fs-1 text-warning mb-3"></i>
+                                        <h5 class="text-warning">حد مجاز امروز تکمیل شده</h5>
+                                        <p class="text-muted">شما امروز {{ question_limit.total }} پرسش ارسال کرده‌اید.</p>
+                                        <small class="text-muted">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            فردا می‌توانید مجدد پرسش ارسال کنید.
+                                        </small>
+                                    </div>
+                                {% else %}
+                                    <form method="post" action="{% url 'reviews:professor_detail' professor.pk %}?tab=questions" id="question-form">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="form_type" value="question">
+
+                                        <div class="mb-4">
+                                            <label for="id_question_text" class="form-label fw-bold">
+                                                <i class="bi bi-question-lg me-2"></i>متن پرسش
+                                            </label>
+                                            <textarea name="text" id="id_question_text" class="form-control form-control-lg" rows="3" 
+                                                      placeholder="پرسش خود درباره این استاد را مطرح کنید..." 
+                                                      minlength="10" maxlength="1000" required>{{ question_form.text.value|default:'' }}</textarea>
+                                            {% if question_form.text.errors %}
+                                                <div class="text-danger small mt-1">
+                                                    {% for error in question_form.text.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                            <div class="form-text text-end">
+                                                <span id="question-char-count">0</span> / 1000 کاراکتر
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <button type="submit" class="btn btn-primary btn-lg px-4" id="question-submit-btn">
+                                                <i class="bi bi-send me-2"></i>ثبت پرسش
+                                            </button>
+                                            <div class="remaining-badge">
+                                                <span class="badge bg-light text-dark border">
+                                                    <i class="bi bi-arrow-counterclockwise me-1"></i>
+                                                    {{ question_limit.remaining }} پرسش باقی‌مانده
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- لیست پرسش‌ها -->
+                        <h4 class="section-title mb-4">
+                            <i class="bi bi-question-octagon-fill me-2"></i>پرسش و پاسخ
+                            {% if questions %}
+                                <small class="text-muted ms-2">({{ questions|length }} پرسش)</small>
+                            {% endif %}
+                        </h4>
+
+                        {% for question in questions %}
+                        <div class="question-card card shadow-sm border-0 mb-4">
+                            <div class="card-body">
+                                <!-- پرسش -->
+                                <div class="question-item mb-4">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="d-flex align-items-center">
+                                            <div class="user-avatar me-3">
+                                                <div class="avatar-circle bg-info text-white">
+                                                    <i class="bi bi-question-lg"></i>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0 fw-bold">{{ question.user.username }} پرسید:</h6>
+                                                <small class="text-muted">
+                                                    <i class="bi bi-clock me-1"></i>
+                                                    {{ question.created_at|date:"Y/m/d - H:i" }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="question-content ps-5">
+                                        <p class="mb-0">{{ question.text }}</p>
+                                    </div>
+                                </div>
+
+                                <!-- پاسخ‌ها -->
+                                <div class="answers-container">
+                                    {% for answer in question.answers_approved %}
+                                    <div class="answer-item mb-3 ms-4 border-start border-2 border-success ps-3">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div class="d-flex align-items-center">
+                                                <div class="user-avatar me-3">
+                                                    <div class="avatar-circle bg-success text-white">
+                                                        <i class="bi bi-chat-left-text"></i>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0 fw-bold">{{ answer.user.username }} پاسخ داد:</h6>
+                                                    <small class="text-muted">
+                                                        <i class="bi bi-clock me-1"></i>
+                                                        {{ answer.created_at|date:"Y/m/d - H:i" }}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="answer-content ps-5">
+                                            <p class="mb-2">{{ answer.text }}</p>
+                                            
+                                            <!-- لایک/دیس‌لایک پاسخ -->
+                                            <div class="answer-actions mt-2">
+                                                <button class="btn btn-sm btn-outline-success vote-answer-btn me-2" 
+                                                        onclick="voteAnswer({{ answer.id }}, 1)"
+                                                        id="answer-{{ answer.id }}-upvote">
+                                                    <i class="bi bi-hand-thumbs-up me-1"></i>
+                                                    <span id="answer-{{ answer.id }}-likes">{{ answer.likes_count }}</span>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger vote-answer-btn" 
+                                                        onclick="voteAnswer({{ answer.id }}, -1)"
+                                                        id="answer-{{ answer.id }}-downvote">
+                                                    <i class="bi bi-hand-thumbs-down me-1"></i>
+                                                    <span id="answer-{{ answer.id }}-dislikes">{{ answer.dislikes_count }}</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% empty %}
+                                    <div class="no-answer-message text-center py-3">
+                                        <i class="bi bi-chat-left fs-4 text-muted me-2"></i>
+                                        <span class="text-muted">هنوز پاسخی ثبت نشده است.</span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+
+                                <!-- فرم پاسخ -->
+                                <div class="answer-form mt-4 pt-3 border-top">
+                                    <form method="post" action="{% url 'reviews:professor_detail' professor.pk %}?tab=questions" id="answer-form-{{ question.id }}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="form_type" value="answer">
+                                        <input type="hidden" name="question_id" value="{{ question.id }}">
+
+                                        <div class="mb-3">
+                                            <label for="id_answer_text_{{ question.id }}" class="form-label fw-bold">
+                                                <i class="bi bi-reply-fill me-2"></i>پاسخ خود را بنویسید
+                                            </label>
+                                            <textarea name="text" id="id_answer_text_{{ question.id }}" class="form-control" rows="2" 
+                                                      placeholder="پاسخ خود را بنویسید..." 
+                                                      minlength="10" maxlength="1000" required>{{ answer_form.text.value|default:'' }}</textarea>
+                                            {% if answer_form.text.errors %}
+                                                <div class="text-danger small mt-1">
+                                                    {% for error in answer_form.text.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <button type="submit" class="btn btn-secondary btn-sm">
+                                            <i class="bi bi-send me-1"></i>ثبت پاسخ
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="empty-state text-center py-5">
+                            <i class="bi bi-question-circle fs-1 text-muted mb-3"></i>
+                            <h5 class="text-muted">هنوز پرسشی ثبت نشده است</h5>
+                            <p class="text-muted">اولین نفری باشید که سوال می‌پرسید.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- ==================== تب ارزیابی کیفی ==================== -->
+                    <div class="tab-pane fade" id="evaluation" role="tabpanel" aria-labelledby="evaluation-tab">
+                        <!-- پیام‌های مخصوص ارزیابی -->
+{% if messages and request.GET.tab == 'evaluation' %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4 border-0 shadow-sm">
+            <i class="bi bi-{% if message.tags == 'success' %}check-circle{% else %}exclamation-circle{% endif %}-fill me-2"></i> 
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+                        <!-- فرم ارزیابی کیفی -->
+                        <div class="card card-form mb-5">
+                            <div class="card-header bg-gradient-success text-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">
+                                        <i class="bi bi-clipboard-check-fill me-2"></i>ارزیابی کیفی استاد
+                                    </h5>
+                                    {% if user_evaluation %}
+                                        <span class="badge bg-light text-success">
+                                            <i class="bi bi-check-circle me-1"></i>قبلاً ارزیابی کرده‌اید
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <form method="post" action="{% url 'reviews:professor_detail' professor.pk %}?tab=evaluation" id="evaluation-form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="form_type" value="evaluation">
+
+                                    <div class="row">
+                                        <!-- ستون اول -->
+                                        <div class="col-md-6">
+                                            <!-- روش تدریس -->
+                                            <div class="evaluation-item mb-4">
+                                                <label class="form-label fw-bold d-flex justify-content-between">
+                                                    <span>
+                                                        <i class="bi bi-mortarboard-fill me-2"></i>روش تدریس
+                                                    </span>
+                                                    {% if user_evaluation %}
+                                                        <span class="text-success small">
+                                                            <i class="bi bi-star-fill me-1"></i>{{ user_evaluation.teaching_method }}/5
+                                                        </span>
+                                                    {% endif %}
+                                                </label>
+                                                <!-- سیستم ستاره‌ای گرافیکی جایگزین dropdown -->
+                                                <div class="star-rating-widget evaluation-stars">
+                                                    <div class="stars mb-2">
+                                                        {% for i in "54321" %}
+                                                            <input type="radio" name="teaching_method" id="teaching_method_star{{ i }}" value="{{ i }}" 
+                                                                   {% if user_evaluation.teaching_method == i or evaluation_form.teaching_method.value == i %}checked{% endif %}
+                                                                   {% if not user_evaluation and not evaluation_form.teaching_method.value and forloop.first %}checked{% endif %}>
+                                                            <label for="teaching_method_star{{ i }}" title="{{ i }} ستاره">
+                                                                <i class="bi bi-star" data-rating="{{ i }}"></i>
+                                                            </label>
+                                                        {% endfor %}
+                                                    </div>
+                                                    <div class="rating-value text-center mt-2">
+                                                        <span class="badge bg-secondary" id="teaching_method_value">{% if user_evaluation %}{{ user_evaluation.teaching_method }}/5{% else %}0/5{% endif %}</span>
+                                                    </div>
+                                                </div>
+                                                {% if evaluation_form.teaching_method.errors %}
+                                                    <div class="text-danger small mt-1">
+                                                        {% for error in evaluation_form.teaching_method.errors %}
+                                                            {{ error }}
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                                <div class="form-text">
+                                                    کیفیت ارائه مطالب، تسلط بر موضوع، وضوح بیان
+                                                </div>
+                                            </div>
+
+                                            <!-- انعطاف‌پذیری در نمره‌دهی -->
+                                            <div class="evaluation-item mb-4">
+                                                <label class="form-label fw-bold d-flex justify-content-between">
+                                                    <span>
+                                                        <i class="bi bi-award-fill me-2"></i>انعطاف‌پذیری در نمره‌دهی
+                                                    </span>
+                                                    {% if user_evaluation %}
+                                                        <span class="text-success small">
+                                                            <i class="bi bi-star-fill me-1"></i>{{ user_evaluation.grading_flexibility }}/5
+                                                        </span>
+                                                    {% endif %}
+                                                </label>
+                                                <!-- سیستم ستاره‌ای گرافیکی جایگزین dropdown -->
+                                                <div class="star-rating-widget evaluation-stars">
+                                                    <div class="stars mb-2">
+                                                        {% for i in "54321" %}
+                                                            <input type="radio" name="grading_flexibility" id="grading_flexibility_star{{ i }}" value="{{ i }}" 
+                                                                   {% if user_evaluation.grading_flexibility == i or evaluation_form.grading_flexibility.value == i %}checked{% endif %}
+                                                                   {% if not user_evaluation and not evaluation_form.grading_flexibility.value and forloop.first %}checked{% endif %}>
+                                                            <label for="grading_flexibility_star{{ i }}" title="{{ i }} ستاره">
+                                                                <i class="bi bi-star" data-rating="{{ i }}"></i>
+                                                            </label>
+                                                        {% endfor %}
+                                                    </div>
+                                                    <div class="rating-value text-center mt-2">
+                                                        <span class="badge bg-secondary" id="grading_flexibility_value">{% if user_evaluation %}{{ user_evaluation.grading_flexibility }}/5{% else %}0/5{% endif %}</span>
+                                                    </div>
+                                                </div>
+                                                {% if evaluation_form.grading_flexibility.errors %}
+                                                    <div class="text-danger small mt-1">
+                                                        {% for error in evaluation_form.grading_flexibility.errors %}
+                                                            {{ error }}
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                                <div class="form-text">
+                                                    انصاف در نمره‌دهی، امکان جبران، توجه به تلاش دانشجو
+                                                </div>
+                                            </div>
+
+                                            <!-- سختی امتحانات -->
+                                            <div class="evaluation-item mb-4">
+                                                <label class="form-label fw-bold d-flex justify-content-between">
+                                                    <span>
+                                                        <i class="bi bi-file-text-fill me-2"></i>سختی امتحانات
+                                                    </span>
+                                                    {% if user_evaluation %}
+                                                        <span class="text-success small">
+                                                            <i class="bi bi-star-fill me-1"></i>{{ user_evaluation.exam_difficulty }}/5
+                                                        </span>
+                                                    {% endif %}
+                                                </label>
+                                                <!-- سیستم ستاره‌ای گرافیکی جایگزین dropdown -->
+                                                <div class="star-rating-widget evaluation-stars">
+                                                    <div class="stars mb-2">
+                                                        {% for i in "54321" %}
+                                                            <input type="radio" name="exam_difficulty" id="exam_difficulty_star{{ i }}" value="{{ i }}" 
+                                                                   {% if user_evaluation.exam_difficulty == i or evaluation_form.exam_difficulty.value == i %}checked{% endif %}
+                                                                   {% if not user_evaluation and not evaluation_form.exam_difficulty.value and forloop.first %}checked{% endif %}>
+                                                            <label for="exam_difficulty_star{{ i }}" title="{{ i }} ستاره">
+                                                                <i class="bi bi-star" data-rating="{{ i }}"></i>
+                                                            </label>
+                                                        {% endfor %}
+                                                    </div>
+                                                    <div class="rating-value text-center mt-2">
+                                                        <span class="badge bg-secondary" id="exam_difficulty_value">{% if user_evaluation %}{{ user_evaluation.exam_difficulty }}/5{% else %}0/5{% endif %}</span>
+                                                    </div>
+                                                </div>
+                                                {% if evaluation_form.exam_difficulty.errors %}
+                                                    <div class="text-danger small mt-1">
+                                                        {% for error in evaluation_form.exam_difficulty.errors %}
+                                                            {{ error }}
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                                <div class="form-text">
+                                                    تناسب سوالات با مطالب تدریس شده، میزان دشواری
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- ستون دوم -->
+                                        <div class="col-md-6">
+                                            <!-- سواد علمی -->
+                                            <div class="evaluation-item mb-4">
+                                                <label class="form-label fw-bold d-flex justify-content-between">
+                                                    <span>
+                                                        <i class="bi bi-book-fill me-2"></i>سواد علمی
+                                                    </span>
+                                                    {% if user_evaluation %}
+                                                        <span class="text-success small">
+                                                            <i class="bi bi-star-fill me-1"></i>{{ user_evaluation.subject_knowledge }}/5
+                                                        </span>
+                                                    {% endif %}
+                                                </label>
+                                                <!-- سیستم ستاره‌ای گرافیکی جایگزین dropdown -->
+                                                <div class="star-rating-widget evaluation-stars">
+                                                    <div class="stars mb-2">
+                                                        {% for i in "54321" %}
+                                                            <input type="radio" name="subject_knowledge" id="subject_knowledge_star{{ i }}" value="{{ i }}" 
+                                                                   {% if user_evaluation.subject_knowledge == i or evaluation_form.subject_knowledge.value == i %}checked{% endif %}
+                                                                   {% if not user_evaluation and not evaluation_form.subject_knowledge.value and forloop.first %}checked{% endif %}>
+                                                            <label for="subject_knowledge_star{{ i }}" title="{{ i }} ستاره">
+                                                                <i class="bi bi-star" data-rating="{{ i }}"></i>
+                                                            </label>
+                                                        {% endfor %}
+                                                    </div>
+                                                    <div class="rating-value text-center mt-2">
+                                                        <span class="badge bg-secondary" id="subject_knowledge_value">{% if user_evaluation %}{{ user_evaluation.subject_knowledge }}/5{% else %}0/5{% endif %}</span>
+                                                    </div>
+                                                </div>
+                                                {% if evaluation_form.subject_knowledge.errors %}
+                                                    <div class="text-danger small mt-1">
+                                                        {% for error in evaluation_form.subject_knowledge.errors %}
+                                                            {{ error }}
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                                <div class="form-text">
+                                                    عمق علمی، آگاهی از جدیدترین مطالب، تسلط بر موضوع درس
+                                                </div>
+                                            </div>
+
+                                            <!-- ادب و احترام -->
+                                            <div class="evaluation-item mb-4">
+                                                <label class="form-label fw-bold d-flex justify-content-between">
+                                                    <span>
+                                                        <i class="bi bi-hand-thumbs-up-fill me-2"></i>ادب و احترام
+                                                    </span>
+                                                    {% if user_evaluation %}
+                                                        <span class="text-success small">
+                                                            <i class="bi bi-star-fill me-1"></i>{{ user_evaluation.respect }}/5
+                                                        </span>
+                                                    {% endif %}
+                                                </label>
+                                                <!-- سیستم ستاره‌ای گرافیکی جایگزین dropdown -->
+                                                <div class="star-rating-widget evaluation-stars">
+                                                    <div class="stars mb-2">
+                                                        {% for i in "54321" %}
+                                                            <input type="radio" name="respect" id="respect_star{{ i }}" value="{{ i }}" 
+                                                                   {% if user_evaluation.respect == i or evaluation_form.respect.value == i %}checked{% endif %}
+                                                                   {% if not user_evaluation and not evaluation_form.respect.value and forloop.first %}checked{% endif %}>
+                                                            <label for="respect_star{{ i }}" title="{{ i }} ستاره">
+                                                                <i class="bi bi-star" data-rating="{{ i }}"></i>
+                                                            </label>
+                                                        {% endfor %}
+                                                    </div>
+                                                    <div class="rating-value text-center mt-2">
+                                                        <span class="badge bg-secondary" id="respect_value">{% if user_evaluation %}{{ user_evaluation.respect }}/5{% else %}0/5{% endif %}</span>
+                                                    </div>
+                                                </div>
+                                                {% if evaluation_form.respect.errors %}
+                                                    <div class="text-danger small mt-1">
+                                                        {% for error in evaluation_form.respect.errors %}
+                                                            {{ error }}
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                                <div class="form-text">
+                                                    احترام به دانشجویان، برخورد مناسب، صداقت
+                                                </div>
+                                            </div>
+
+                                            <!-- تعامل با دانشجو -->
+                                            <div class="evaluation-item mb-4">
+                                                <label class="form-label fw-bold d-flex justify-content-between">
+                                                    <span>
+                                                        <i class="bi bi-people-fill me-2"></i>تعامل با دانشجو
+                                                    </span>
+                                                    {% if user_evaluation %}
+                                                        <span class="text-success small">
+                                                            <i class="bi bi-star-fill me-1"></i>{{ user_evaluation.student_interaction }}/5
+                                                        </span>
+                                                    {% endif %}
+                                                </label>
+                                                <!-- سیستم ستاره‌ای گرافیکی جایگزین dropdown -->
+                                                <div class="star-rating-widget evaluation-stars">
+                                                    <div class="stars mb-2">
+                                                        {% for i in "54321" %}
+                                                            <input type="radio" name="student_interaction" id="student_interaction_star{{ i }}" value="{{ i }}" 
+                                                                   {% if user_evaluation.student_interaction == i or evaluation_form.student_interaction.value == i %}checked{% endif %}
+                                                                   {% if not user_evaluation and not evaluation_form.student_interaction.value and forloop.first %}checked{% endif %}>
+                                                            <label for="student_interaction_star{{ i }}" title="{{ i }} ستاره">
+                                                                <i class="bi bi-star" data-rating="{{ i }}"></i>
+                                                            </label>
+                                                        {% endfor %}
+                                                    </div>
+                                                    <div class="rating-value text-center mt-2">
+                                                        <span class="badge bg-secondary" id="student_interaction_value">{% if user_evaluation %}{{ user_evaluation.student_interaction }}/5{% else %}0/5{% endif %}</span>
+                                                    </div>
+                                                </div>
+                                                {% if evaluation_form.student_interaction.errors %}
+                                                    <div class="text-danger small mt-1">
+                                                        {% for error in evaluation_form.student_interaction.errors %}
+                                                            {{ error }}
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                                <div class="form-text">
+                                                    پاسخگویی به سوالات، ارتباط خارج از کلاس، راهنمایی
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-5 pt-4 border-top">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <button type="submit" class="btn btn-success btn-lg px-5" id="evaluation-submit-btn">
+                <i class="bi bi-save me-2"></i>
+                {% if user_evaluation %}
+                    به‌روزرسانی ارزیابی
+                {% else %}
+                    ثبت ارزیابی
+                {% endif %}
+            </button>
+            
+            {% if user_evaluation %}
+            <!-- دکمه حذف ارزیابی -->
+            <button type="button" class="btn btn-danger btn-lg px-5 ms-3" 
+                    data-bs-toggle="modal" data-bs-target="#deleteEvaluationModal">
+                <i class="bi bi-trash me-2"></i>حذف ارزیابی
+            </button>
+            {% endif %}
+        </div>
+        
+        {% if user_evaluation %}
+        <div class="text-end">
+            <small class="text-muted d-block">
+                <i class="bi bi-calendar-check me-1"></i>
+                آخرین به‌روزرسانی: {{ user_evaluation.updated_at|date:"Y/m/d - H:i" }}
+            </small>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+                        <!-- وضعیت ارزیابی کاربر -->
+                        {% if user_evaluation %}
+                        <div class="card shadow-sm border-0 mb-5">
+                            <div class="card-header bg-success bg-opacity-10 border-success border-start-0 border-end-0 border-top-0 border-3">
+                                <h6 class="mb-0 text-success">
+                                    <i class="bi bi-check-circle-fill me-2"></i>ارزیابی شما
+                                    <span class="float-left badge bg-success">
+                                        میانگین: {{ user_evaluation.average_score|floatformat:1 }}/5
+                                    </span>
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="evaluation-score-item mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span class="fw-bold">روش تدریس</span>
+                                                <span class="text-success">{{ user_evaluation.teaching_method }}/5</span>
+                                            </div>
+                                            <div class="stars small">
+                                                {% for i in "12345" %}
+                                                    {% if forloop.counter <= user_evaluation.teaching_method %}
+                                                        <i class="bi bi-star-fill text-warning"></i>
+                                                    {% else %}
+                                                        <i class="bi bi-star text-warning"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="evaluation-score-item mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span class="fw-bold">انعطاف‌پذیری</span>
+                                                <span class="text-success">{{ user_evaluation.grading_flexibility }}/5</span>
+                                            </div>
+                                            <div class="stars small">
+                                                {% for i in "12345" %}
+                                                    {% if forloop.counter <= user_evaluation.grading_flexibility %}
+                                                        <i class="bi bi-star-fill text-warning"></i>
+                                                    {% else %}
+                                                        <i class="bi bi-star text-warning"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="evaluation-score-item mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span class="fw-bold">سختی امتحانات</span>
+                                                <span class="text-success">{{ user_evaluation.exam_difficulty }}/5</span>
+                                            </div>
+                                            <div class="stars small">
+                                                {% for i in "12345" %}
+                                                    {% if forloop.counter <= user_evaluation.exam_difficulty %}
+                                                        <i class="bi bi-star-fill text-warning"></i>
+                                                    {% else %}
+                                                        <i class="bi bi-star text-warning"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="evaluation-score-item mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span class="fw-bold">سواد علمی</span>
+                                                <span class="text-success">{{ user_evaluation.subject_knowledge }}/5</span>
+                                            </div>
+                                            <div class="stars small">
+                                                {% for i in "12345" %}
+                                                    {% if forloop.counter <= user_evaluation.subject_knowledge %}
+                                                        <i class="bi bi-star-fill text-warning"></i>
+                                                    {% else %}
+                                                        <i class="bi bi-star text-warning"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="evaluation-score-item mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span class="fw-bold">ادب و احترام</span>
+                                                <span class="text-success">{{ user_evaluation.respect }}/5</span>
+                                            </div>
+                                            <div class="stars small">
+                                                {% for i in "12345" %}
+                                                    {% if forloop.counter <= user_evaluation.respect %}
+                                                        <i class="bi bi-star-fill text-warning"></i>
+                                                    {% else %}
+                                                        <i class="bi bi-star text-warning"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="evaluation-score-item mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span class="fw-bold">تعامل با دانشجو</span>
+                                                <span class="text-success">{{ user_evaluation.student_interaction }}/5</span>
+                                            </div>
+                                            <div class="stars small">
+                                                {% for i in "12345" %}
+                                                    {% if forloop.counter <= user_evaluation.student_interaction %}
+                                                        <i class="bi bi-star-fill text-warning"></i>
+                                                    {% else %}
+                                                        <i class="bi bi-star text-warning"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== نمودار ارزیابی‌ها (خارج از تب‌ها) ==================== -->
+<div class="mt-5 pt-5 border-top">
+    <h4 class="section-title mb-4">
+    <i class="bi bi-bar-chart-fill me-2"></i>نتایج ارزیابی کیفی
+    {% if has_evaluations %}
+      
+    {% endif %}
+</h4>
+    
+    {% if has_evaluations %}
+        <div class="card shadow border-0">
+            <div class="card-header bg-white">
+                <h6 class="mb-0">میانگین امتیازها در هر پارامتر</h6>
+                <p class="mb-0 mt-1 small text-muted">
+                    نمودار زیر میانگین امتیازهای داده شده توسط دانشجویان را نشان می‌دهد.
+                </p>
+            </div>
+            <div class="card-body">
+                <!-- Container برای نمودار D3.js -->
+                <div id="evaluation-chart-container">
+                    <div id="evaluation-chart" style="width: 100%; height: 400px;"></div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="empty-state text-center py-5">
+            <i class="bi bi-bar-chart fs-1 text-muted mb-3"></i>
+            <h5 class="text-muted">هنوز ارزیابی‌ای ثبت نشده است</h5>
+            <p class="text-muted">اولین نفری باشید که این استاد را ارزیابی می‌کند.</p>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- بارگذاری D3.js از CDN -->
+<script src="https://d3js.org/d3.v7.min.js"></script>
+
+<script>
+// تابع برای گرفتن CSRF Token
+function getCSRFToken() {
+    const csrfTokenElement = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (csrfTokenElement) {
+        return csrfTokenElement.value;
+    }
+    
+    // اگر پیدا نشد، در cookie ها جستجو کن
+    const name = 'csrftoken';
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// جلوگیری از double submit
+function preventDoubleSubmit() {
+    const forms = document.querySelectorAll('form');
+    
+    forms.forEach(form => {
+        const submitBtn = form.querySelector('button[type="submit"]');
+        
+        if (submitBtn) {
+            form.addEventListener('submit', function() {
+                // غیرفعال کردن دکمه submit
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> در حال ارسال...';
+            });
+        }
+    });
+}
+
+// تابع برای رأی دادن به نظر
+function voteReview(reviewId, value) {
+    const csrfToken = getCSRFToken();
+    if (!csrfToken) {
+        alert('خطا: توکن امنیتی یافت نشد');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('review_id', reviewId);
+    formData.append('value', value);
+    formData.append('csrfmiddlewaretoken', csrfToken);
+    
+    fetch('/vote-review/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
+        body: formData
+    })
+    .then(response => {
+        if (response.status === 403) {
+            throw new Error('خطای دسترسی (403). لطفاً صفحه را refresh کنید.');
+        }
+        if (!response.ok) {
+            throw new Error('خطای شبکه: ' + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.likes_count !== undefined && data.dislikes_count !== undefined) {
+            // به‌روزرسانی اعداد لایک/دیس‌لایک
+            document.getElementById('review-' + reviewId + '-likes').textContent = data.likes_count;
+            document.getElementById('review-' + reviewId + '-dislikes').textContent = data.dislikes_count;
+            
+            // نمایش پیام موفقیت
+            const message = value === 1 ? 'لایک ثبت شد!' : 'دیس‌لایک ثبت شد!';
+            showToast(message, 'success');
+        } else if (data.error) {
+            showToast('خطا: ' + data.error, 'danger');
+        }
+    })
+    .catch(error => {
+        showToast(error.message || 'خطا در ارتباط با سرور', 'danger');
+        console.error('Error:', error);
+    });
+}
+
+// تابع برای رأی دادن به پاسخ
+function voteAnswer(answerId, value) {
+    const csrfToken = getCSRFToken();
+    if (!csrfToken) {
+        alert('خطا: توکن امنیتی یافت نشد');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('answer_id', answerId);
+    formData.append('value', value);
+    formData.append('csrfmiddlewaretoken', csrfToken);
+    
+    fetch('/vote-answer/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
+        body: formData
+    })
+    .then(response => {
+        if (response.status === 403) {
+            throw new Error('خطای دسترسی (403). لطفاً صفحه را refresh کنید.');
+        }
+        if (!response.ok) {
+            throw new Error('خطای شبکه: ' + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.likes_count !== undefined && data.dislikes_count !== undefined) {
+            // به‌روزرسانی اعداد لایک/دیس‌لایک
+            document.getElementById('answer-' + answerId + '-likes').textContent = data.likes_count;
+            document.getElementById('answer-' + answerId + '-dislikes').textContent = data.dislikes_count;
+            
+            // نمایش پیام موفقیت
+            const message = value === 1 ? 'لایک ثبت شد!' : 'دیس‌لایک ثبت شد!';
+            showToast(message, 'success');
+        } else if (data.error) {
+            showToast('خطا: ' + data.error, 'danger');
+        }
+    })
+    .catch(error => {
+        showToast(error.message || 'خطا در ارتباط با سرور', 'danger');
+        console.error('Error:', error);
+    });
+}
+
+// تابع برای نمایش پیام‌های toast
+function showToast(message, type = 'info') {
+    // ایجاد container اگر وجود نداشته باشد
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        toastContainer.style.zIndex = '1055';
+        document.body.appendChild(toastContainer);
+    }
+    
+    const toastId = 'toast-' + Date.now();
+    
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-bg-${type} border-0`;
+    toast.id = toastId;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                ${type === 'success' ? '✅' : '❌'} ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    // نمایش toast با Bootstrap
+    if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+        const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+        bsToast.show();
+    } else {
+        // Fallback اگر Bootstrap نیست
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+    
+    // حذف toast پس از پنهان شدن
+    toast.addEventListener('hidden.bs.toast', function () {
+        toast.remove();
+    });
+}
+
+// تابع برای فعال‌سازی تب بر اساس URL
+function activateTabFromURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    
+    if (tabParam) {
+        const tabTrigger = document.querySelector(`[data-bs-target="#${tabParam}"]`);
+        if (tabTrigger) {
+            const tab = new bootstrap.Tab(tabTrigger);
+            tab.show();
+        }
+    }
+}
+
+// شمارنده کاراکتر برای textarea
+function setupCharCounters() {
+    const reviewText = document.getElementById('id_text');
+    const reviewCharCount = document.getElementById('review-char-count');
+    
+    if (reviewText && reviewCharCount) {
+        reviewCharCount.textContent = reviewText.value.length;
+        reviewText.addEventListener('input', function() {
+            reviewCharCount.textContent = this.value.length;
+        });
+    }
+    
+    const questionText = document.getElementById('id_question_text');
+    const questionCharCount = document.getElementById('question-char-count');
+    
+    if (questionText && questionCharCount) {
+        questionCharCount.textContent = questionText.value.length;
+        questionText.addEventListener('input', function() {
+            questionCharCount.textContent = this.value.length;
+        });
+    }
+}
+
+// تنظیم star rating widgets - نسخه بهبود یافته برای ارزیابی کیفی
+function setupStarRating() {
+    // سیستم ستاره‌ای اصلی برای نظرات
+    const starWidgets = document.querySelectorAll('.star-rating-widget:not(.evaluation-stars)');
+    
+    starWidgets.forEach(widget => {
+        const stars = widget.querySelectorAll('input[type="radio"]');
+        const labels = widget.querySelectorAll('label');
+        
+        labels.forEach(label => {
+            label.addEventListener('mouseenter', function() {
+                const rating = this.querySelector('i').dataset.rating;
+                highlightStars(widget, rating);
+            });
+            
+            label.addEventListener('mouseleave', function() {
+                const checkedStar = widget.querySelector('input[type="radio"]:checked');
+                if (checkedStar) {
+                    highlightStars(widget, checkedStar.value);
+                } else {
+                    resetStars(widget);
+                }
+            });
+            
+            label.addEventListener('click', function() {
+                const rating = this.querySelector('i').dataset.rating;
+                highlightStars(widget, rating);
+            });
+        });
+        
+        // Highlight initial stars if there's a checked one
+        const checkedStar = widget.querySelector('input[type="radio"]:checked');
+        if (checkedStar) {
+            highlightStars(widget, checkedStar.value);
+        }
+    });
+    
+    // سیستم ستاره‌ای برای ارزیابی کیفی
+    const evaluationWidgets = document.querySelectorAll('.evaluation-stars');
+    
+    evaluationWidgets.forEach(widget => {
+        const stars = widget.querySelectorAll('input[type="radio"]');
+        const labels = widget.querySelectorAll('label');
+        const fieldName = stars[0].getAttribute('name');
+        const valueDisplay = document.getElementById(fieldName + '_value');
+        
+        labels.forEach(label => {
+            label.addEventListener('mouseenter', function() {
+                const rating = parseInt(this.querySelector('i').dataset.rating);
+                highlightStars(widget, rating);
+                if (valueDisplay) {
+                    valueDisplay.textContent = rating + '/5';
+                    valueDisplay.className = 'badge bg-warning';
+                }
+            });
+            
+            label.addEventListener('mouseleave', function() {
+                const checkedStar = widget.querySelector('input[type="radio"]:checked');
+                if (checkedStar) {
+                    const rating = parseInt(checkedStar.value);
+                    highlightStars(widget, rating);
+                    if (valueDisplay) {
+                        valueDisplay.textContent = rating + '/5';
+                        valueDisplay.className = 'badge bg-warning';
+                    }
+                } else {
+                    resetStars(widget);
+                    if (valueDisplay) {
+                        valueDisplay.textContent = '0/5';
+                        valueDisplay.className = 'badge bg-secondary';
+                    }
+                }
+            });
+            
+            label.addEventListener('click', function() {
+                const rating = parseInt(this.querySelector('i').dataset.rating);
+                highlightStars(widget, rating);
+                if (valueDisplay) {
+                    valueDisplay.textContent = rating + '/5';
+                    valueDisplay.className = 'badge bg-warning';
+                }
+                
+                // نمایش پیام تأیید
+                const fieldLabels = {
+                    'teaching_method': 'روش تدریس',
+                    'grading_flexibility': 'انعطاف‌پذیری در نمره‌دهی',
+                    'exam_difficulty': 'سختی امتحانات',
+                    'subject_knowledge': 'سواد علمی',
+                    'respect': 'ادب و احترام',
+                    'student_interaction': 'تعامل با دانشجو'
+                };
+                
+                const fieldLabel = fieldLabels[fieldName] || fieldName;
+                showToast(`امتیاز ${rating} برای "${fieldLabel}" ثبت شد`, 'success');
+            });
+        });
+        
+        // Highlight initial stars if there's a checked one
+        const checkedStar = widget.querySelector('input[type="radio"]:checked');
+        if (checkedStar) {
+            const rating = parseInt(checkedStar.value);
+            highlightStars(widget, rating);
+            if (valueDisplay) {
+                valueDisplay.textContent = rating + '/5';
+                valueDisplay.className = 'badge bg-warning';
+            }
+        }
+    });
+}
+
+function highlightStars(widget, rating) {
+    const stars = widget.querySelectorAll('i[data-rating]');
+    stars.forEach(star => {
+        const starRating = parseInt(star.dataset.rating);
+        if (starRating <= rating) {
+            star.classList.remove('bi-star');
+            star.classList.add('bi-star-fill');
+            star.style.color = '#ffc107';
+        } else {
+            star.classList.remove('bi-star-fill');
+            star.classList.add('bi-star');
+            star.style.color = '#ddd';
+        }
+    });
+}
+
+function resetStars(widget) {
+    const stars = widget.querySelectorAll('i[data-rating]');
+    stars.forEach(star => {
+        star.classList.remove('bi-star-fill');
+        star.classList.add('bi-star');
+        star.style.color = '#ddd';
+    });
+}
+
+// ==================== تابع رسم نمودار با D3.js ====================
+function renderEvaluationChart(data) {
+    if (!data || !data.has_data) {
+        console.log('داده‌ای برای نمایش نمودار وجود ندارد');
+        return;
+    }
+    
+    // حذف نمودار قبلی اگر وجود دارد
+    d3.select("#evaluation-chart").selectAll("*").remove();
+    
+    // تنظیمات نمودار
+    const margin = {top: 50, right: 30, bottom: 80, left: 80}; // bottom را افزایش دهید
+    const width = document.getElementById('evaluation-chart').clientWidth - margin.left - margin.right;
+    const height = 400 - margin.top - margin.bottom;
+    
+    // ایجاد SVG
+    const svg = d3.select("#evaluation-chart")
+        .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+    
+    // تعریف برچسب‌های فارسی
+    const persianLabels = {
+        'teaching_method': 'روش تدریس',
+        'grading_flexibility': 'انعطاف‌پذیری',
+        'exam_difficulty': 'سختی امتحانات',
+        'subject_knowledge': 'سواد علمی',
+        'respect': 'ادب و احترام',
+        'student_interaction': 'تعامل با دانشجو'
+    };
+    
+    // تبدیل برچسب‌های انگلیسی به فارسی
+    const persianLabelArray = data.labels.map(label => persianLabels[label] || label);
+    
+    // مقیاس X با برچسب‌های فارسی
+    const x = d3.scaleBand()
+        .domain(persianLabelArray)
+        .range([0, width])
+        .padding(0.4);
+    
+    // مقیاس Y
+    const y = d3.scaleLinear()
+        .domain([0, 5]) // حداکثر امتیاز 5
+        .nice()
+        .range([height, 0]);
+    
+    // رنگ‌بندی گرادیان بر اساس امتیاز
+    const colorScale = d3.scaleSequential()
+        .domain([1, 5])
+        .interpolator(d3.interpolateViridis);
+    
+    // رسم محور X با برچسب‌های فارسی
+    svg.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x))
+        .selectAll("text")
+            .attr("transform", "translate(38,10)")
+            .style("text-anchor", "start") // تغییر از end به start
+            .style("font-size", "14px")
+            .style("font-weight", "bold")
+            .style("font-family", "'Vazir', 'IRANSans', 'Tahoma', sans-serif")
+            .style("fill", "#333");
+    
+    // رسم محور Y
+    svg.append("g")
+        .call(d3.axisLeft(y).ticks(5))
+        .call(g => g.select(".domain").remove())
+        .call(g => g.selectAll(".tick line").clone()
+            .attr("x2", width)
+            .attr("stroke-opacity", 0.1))
+        .selectAll("text")
+         .attr("dx", "-8px")
+            .style("font-size", "14px")
+            .style("font-family", "'Vazir', 'IRANSans', 'Tahoma', sans-serif");
+    
+    // عنوان محور Y به فارسی
+    svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 0 - margin.left + 15)
+        .attr("x", 0 - (height / 2))
+        .attr("dy", "1em")
+        .attr("text-anchor", "middle")
+        .style("font-size", "14px")
+        .style("font-weight", "bold")
+        .style("font-family", "'Vazir', 'IRANSans', 'Tahoma', sans-serif")
+        .style("fill", "#4a148c")
+        .text("میانگین امتیاز (از 5)");
+    
+    // عنوان محور X به فارسی (اختیاری)
+    svg.append("text")
+        .attr("transform", `translate(${width / 2}, ${height + margin.bottom - 20})`)
+        .style("text-anchor", "middle")
+        .style("font-size", "16px")
+        .style("font-weight", "bold")
+        .style("font-family", "'Vazir', 'IRANSans', 'Tahoma', sans-serif")
+        .style("fill", "#4a148c")
+        .text("پارامترهای ارزیابی");
+    
+    // رسم ستون‌ها
+    svg.selectAll(".bar")
+        .data(persianLabelArray)
+        .enter()
+        .append("rect")
+            .attr("class", "bar")
+            .attr("x", (d, i) => x(d))
+            .attr("y", d => {
+                const originalLabel = data.labels[persianLabelArray.indexOf(d)];
+                return y(data.averages[data.labels.indexOf(originalLabel)]);
+            })
+            .attr("width", x.bandwidth())
+            .attr("height", d => {
+                const originalLabel = data.labels[persianLabelArray.indexOf(d)];
+                return height - y(data.averages[data.labels.indexOf(originalLabel)]);
+            })
+            .attr("fill", d => {
+                const originalLabel = data.labels[persianLabelArray.indexOf(d)];
+                return colorScale(data.averages[data.labels.indexOf(originalLabel)]);
+            })
+            .attr("rx", 4)
+            .attr("ry", 4)
+            .on("mouseover", function(event, d) {
+                // هایلایت هنگام هاور
+                d3.select(this)
+                    .transition()
+                    .duration(200)
+                    .attr("opacity", 0.8)
+                    .attr("stroke", "#333")
+                    .attr("stroke-width", 2);
+                
+                // نمایش tooltip فارسی
+                const originalLabel = data.labels[persianLabelArray.indexOf(d)];
+                const index = data.labels.indexOf(originalLabel);
+                
+                // حذف tooltip قبلی اگر وجود دارد
+                svg.selectAll(".tooltip").remove();
+                
+                const tooltip = svg.append("g")
+                    .attr("class", "tooltip")
+                    .attr("transform", `translate(${x(d) + x.bandwidth()/2},${y(data.averages[index]) - 40})`);
+                
+                tooltip.append("rect")
+                    .attr("x", -70)
+                    .attr("y", -25)
+                    .attr("width", 140)
+                    .attr("height", 50)
+                    .attr("fill", "#333")
+                    .attr("rx", 5)
+                    .attr("ry", 5)
+                    .attr("opacity", 0.9);
+                
+                tooltip.append("text")
+                    .attr("text-anchor", "middle")
+                    .attr("dy", "-0.8em")
+                    .style("fill", "white")
+                    .style("font-size", "12px")
+                    .style("font-family", "'Vazir', 'IRANSans', 'Tahoma', sans-serif")
+                    .text(d); // نام پارامتر
+                
+                tooltip.append("text")
+                    .attr("text-anchor", "middle")
+                    .attr("dy", "1.2em")
+                    .style("fill", "#ffc107")
+                    .style("font-size", "14px")
+                    .style("font-weight", "bold")
+                    .style("font-family", "'Vazir', 'IRANSans', 'Tahoma', sans-serif")
+                    .text(`امتیاز: ${data.averages[index].toFixed(1)}`);
+            })
+            .on("mouseout", function() {
+                // حذف هایلایت
+                d3.select(this)
+                    .transition()
+                    .duration(200)
+                    .attr("opacity", 1)
+                    .attr("stroke", null);
+                
+                // حذف tooltip
+                svg.selectAll(".tooltip").remove();
+            });
+    
+    // اضافه کردن مقادیر روی ستون‌ها
+    svg.selectAll(".label")
+        .data(persianLabelArray)
+        .enter()
+        .append("text")
+            .attr("class", "label")
+            .attr("x", (d, i) => x(d) + x.bandwidth() / 2)
+            .attr("y", d => {
+                const originalLabel = data.labels[persianLabelArray.indexOf(d)];
+                const avg = data.averages[data.labels.indexOf(originalLabel)];
+                return y(avg) - 15;
+            })
+            .attr("text-anchor", "middle")
+            .attr("dy", "0.35em")
+        
+            .style("font-size", "14px")
+            .style("font-weight", "bold")
+            .style("font-family", "'Vazir', 'IRANSans', 'Tahoma', sans-serif")
+            .style("fill", "#333")
+            
+            .text(d => {
+            const originalLabel = data.labels[persianLabelArray.indexOf(d)];
+            const avg = data.averages[data.labels.indexOf(originalLabel)];
+            return avg.toFixed(1);
+        });
+    
+    // عنوان نمودار به فارسی
+    svg.append("text")
+        .attr("x", width / 2)
+        .attr("y", 0 - (margin.top / 2) + -5)
+        .attr("text-anchor", "middle")
+        // تنظیم y را تغییر دهید اگر نیاز است
+        .style("font-size", "16px")
+        .style("font-weight", "bold")
+        .style("font-family", "'Vazir', 'IRANSans', 'Tahoma', sans-serif")
+        .style("fill", "#4a148c")
+        .text(`نتایج ارزیابی کیفی (${data.total_evaluations} ارزیابی)`);
+    
+    // راهنمای رنگ (Legend) - بهبود یافته
+    const legend = svg.append("g")
+        .attr("class", "legend")
+        .attr("transform", `translate(${width - 180}, -34)`);
+    
+    const legendData = [5, 4, 3, 2, 1];
+    
+    // مستطیل‌های رنگ
+    legend.selectAll("rect")
+        .data(legendData)
+        .enter()
+        .append("rect")
+            .attr("x", (d, i) => i * 35)
+            .attr("y", 0)
+            .attr("width", 30)
+            .attr("height", 12)
+            .attr("fill", d => colorScale(d))
+            .attr("rx", 2)
+            .attr("ry", 2);
+    
+    // اعداد زیر مستطیل‌ها
+    legend.selectAll(".legend-number")
+        .data(legendData)
+        .enter()
+        .append("text")
+            .attr("class", "legend-number")
+            .attr("x", (d, i) => i * 35 + 15)
+            .attr("y", 30)
+            .attr("text-anchor", "middle")
+            .style("font-size", "11px")
+            .style("font-family", "'Vazir', 'IRANSans', 'Tahoma', sans-serif")
+            .style("fill", "#666")
+            .text(d => d);
+    
+    // عنوان راهنما
+    legend.append("text")
+        .attr("x", 85) // وسط راهنما (5 * 35 / 2)
+        .attr("y", -5)
+        .attr("text-anchor", "middle")
+        .style("font-size", "12px")
+        .style("font-family", "'Vazir', 'IRANSans', 'Tahoma', sans-serif")
+        .style("font-weight", "bold")
+        .style("fill", "#666")
+        .text("راهنمای امتیاز");
+}
+
+// بارگذاری داده‌های نمودار
+function loadChartData() {
+    const professorId = window.location.pathname.split('/').filter(x => x)[1];
+    
+    if (!professorId || isNaN(professorId)) {
+        console.error('شناسه استاد نامعتبر است');
+        return;
+    }
+    
+    fetch(`/professor/${professorId}/chart-data/`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('خطا در دریافت داده‌های نمودار');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.has_data) {
+                renderEvaluationChart(data);
+            } else {
+                console.log(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading chart data:', error);
+            // استفاده از داده‌های inline اگر fetch شکست خورد
+            try {
+                const inlineData = JSON.parse('{{ chart_data_json|safe }}');
+                if (inlineData && inlineData.labels && inlineData.labels.length > 0) {
+                    renderEvaluationChart(inlineData);
+                }
+            } catch (e) {
+                console.log('هیچ داده‌ای برای نمایش وجود ندارد');
+            }
+        });
+}
+
+// بارگذاری هنگام لود صفحه
+document.addEventListener('DOMContentLoaded', function() {
+    preventDoubleSubmit();
+    activateTabFromURL();
+    setupCharCounters();
+    setupStarRating();
+    
+    // پاک کردن فرم‌ها اگر پیام موفقیت داریم
+    if (document.querySelector('.alert-success')) {
+        const forms = document.querySelectorAll('form');
+        forms.forEach(form => {
+            if (form.id === 'review-form' || form.id === 'question-form' || form.id.startsWith('answer-form-') || form.id === 'evaluation-form') {
+                form.reset();
+            }
+        });
+    }
+    
+    // بارگذاری نمودار اگر داده وجود دارد
+    if ({{ has_evaluations|yesno:"true,false" }}) {
+        loadChartData();
+    }
+    
+    // رفرش نمودار هنگام تغییر سایز پنجره
+    let resizeTimer;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() {
+            if ('{{ has_evaluations }}' === 'True') {
+                loadChartData();
+            }
+        }, 250);
+    });
+    
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+
+<style>
+/* ==================== استایل‌های عمومی بهبود یافته ==================== */
+:root {
+    --primary-gradient: linear-gradient(135deg, #6a1b9a, #8e24aa);
+    --secondary-gradient: linear-gradient(135deg, #1565c0, #1976d2);
+    --success-gradient: linear-gradient(135deg, #2e7d32, #388e3c);
+    --info-gradient: linear-gradient(135deg, #0288d1, #039be5);
+    --warning-gradient: linear-gradient(135deg, #f57c00, #ff9800);
+    --danger-gradient: linear-gradient(135deg, #d32f2f, #f44336);
+}
+
+.text-gradient-primary {
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.bg-gradient-primary {
+    background: var(--primary-gradient) !important;
+}
+
+.bg-gradient-secondary {
+    background: var(--secondary-gradient) !important;
+}
+
+.bg-gradient-success {
+    background: var(--success-gradient) !important;
+}
+
+.bg-gradient-info {
+    background: var(--info-gradient) !important;
+}
+
+.bg-gradient-warning {
+    background: var(--warning-gradient) !important;
+}
+
+.bg-gradient-danger {
+    background: var(--danger-gradient) !important;
+}
+
+.bg-gradient-light {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
+}
+
+/* ==================== استایل کارت استاد ==================== */
+.professor-card {
+    border-radius: 15px;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+}
+
+.professor-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+}
+
+.professor-avatar img {
+    transition: transform 0.3s ease;
+}
+
+.professor-avatar img:hover {
+    transform: scale(1.05);
+}
+
+.professor-name {
+    font-weight: 700;
+    color: #333;
+    position: relative;
+    padding-bottom: 10px;
+}
+
+.professor-name::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 3px;
+    background: var(--primary-gradient);
+    border-radius: 2px;
+}
+
+/* ==================== آمار ==================== */
+.stats-grid .stat-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    transition: all 0.3s ease;
+}
+
+.stats-grid .stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border-color: #6a1b9a;
+}
+
+.stats-grid .stat-card h5 {
+    font-weight: 700;
+    color: #333;
+}
+
+/* ==================== محدودیت‌های روزانه ==================== */
+.limit-card {
+    background: #fff;
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+    transition: all 0.3s ease;
+}
+
+.limit-card:hover {
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+.limit-card.limit-available {
+    border-left: 4px solid #28a745;
+}
+
+.limit-card.limit-reached {
+    border-left: 4px solid #dc3545;
+}
+
+.limit-badge {
+    background: #f8f9fa;
+    color: #333;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-weight: 600;
+    border: 1px solid #dee2e6;
+}
+
+.progress {
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: #f0f0f0;
+}
+
+.progress-bar {
+    border-radius: 4px;
+    transition: width 0.6s ease;
+}
+
+.limit-reached-message {
+    background: linear-gradient(135deg, #fff8e1, #ffecb3);
+    border-radius: 10px;
+}
+
+/* ==================== تب‌ها ==================== */
+.nav-tabs-modern {
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin-bottom: 20px;
+}
+
+.nav-tabs-modern .nav-link {
+    border: none;
+    border-radius: 10px 10px 0 0;
+    padding: 15px 25px;
+    margin: 0 5px;
+    font-weight: 600;
+    color: #666;
+    background: #faf8f8;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-tabs-modern .nav-link::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: transparent;
+    transition: all 0.3s ease;
+}
+
+.nav-tabs-modern .nav-link:hover {
+    color: #6a1b9a;
+    background: #ff6c6c;
+    transform: translateY(-2px);
+    box-shadow: 0 -5px 15px rgba(106, 27, 154, 0.1);
+}
+
+.nav-tabs-modern .nav-link:hover::before {
+    background: #6a1b9a;
+}
+
+.nav-tabs-modern .nav-link.active {
+    color: #fff;
+    background: var(--primary-gradient);
+    box-shadow: 0 -5px 20px rgba(106, 27, 154, 0.2);
+}
+
+.nav-tabs-modern .nav-link.active::before {
+    background: #fff;
+}
+
+.nav-tabs-modern .nav-link .badge {
+    font-size: 0.7em;
+    padding: 2px 6px;
+    margin-left: 5px;
+}
+
+/* ==================== فرم‌ها ==================== */
+.card-form {
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+}
+
+.card-form .card-header {
+    border: none;
+    padding: 20px 25px;
+}
+
+.form-control-lg {
+    border-radius: 10px;
+    border: 2px solid #e0e0e0;
+    padding: 12px 15px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control-lg:focus {
+    border-color: #6a1b9a;
+    box-shadow: 0 0 0 0.25rem rgba(106, 27, 154, 0.25);
+    transform: translateY(-2px);
+}
+
+.form-text {
+    color: #666;
+    font-size: 0.9em;
+}
+
+/* ==================== سیستم ستاره‌دهی ==================== */
+.star-rating-widget {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.star-rating-widget.evaluation-stars {
+    background: #f0f8ff;
+    padding: 15px;
+}
+
+.star-rating-widget .stars {
+    display: flex;
+    justify-content: center;
+    direction: ltr;
+    margin-bottom: 10px;
+}
+
+.star-rating-widget input[type="radio"] {
+    display: none;
+}
+
+.star-rating-widget label {
+    cursor: pointer;
+    font-size: 2rem;
+    color: #ddd;
+    margin: 0 5px;
+    transition: all 0.3s ease;
+}
+
+.star-rating-widget.evaluation-stars label {
+    font-size: 1.8rem;
+    margin: 0 3px;
+}
+
+.star-rating-widget label:hover,
+.star-rating-widget label:hover ~ label {
+    color: #ffc107;
+}
+
+.star-rating-widget input[type="radio"]:checked ~ label {
+    color: #ffc107;
+}
+
+.rating-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+.rating-labels .badge {
+    font-size: 0.8em;
+    padding: 3px 8px;
+    background: #e9ecef;
+    color: #666;
+}
+
+.rating-value .badge {
+    font-size: 0.9em;
+    padding: 5px 10px;
+    transition: all 0.3s ease;
+}
+
+/* ==================== کارت‌های محتوا ==================== */
+.section-title {
+    color: #333;
+    font-weight: 700;
+    position: relative;
+    padding-bottom: 10px;
+    margin-bottom: 25px;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 100px;
+    height: 3px;
+    background: var(--primary-gradient);
+    border-radius: 2px;
+}
+
+.review-card, .question-card {
+    border: none;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+    background: #fff;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+}
+
+.review-card:hover, .question-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.user-avatar .avatar-circle {
+    background: var(--primary-gradient);
+    color: white;
+    font-size: 1.2em;
+}
+
+/* ==================== دکمه‌ها و اقدامات ==================== */
+.btn {
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 10px 25px;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.btn-lg {
+    padding: 12px 30px;
+    font-size: 1.1rem;
+}
+
+.btn-outline-success, .btn-outline-danger {
+    border-width: 2px;
+}
+
+.btn-outline-success:hover {
+    background: var(--success-gradient);
+    border-color: transparent;
+}
+
+.btn-outline-danger:hover {
+    background: var(--danger-gradient);
+    border-color: transparent;
+}
+
+.remaining-badge .badge {
+    font-size: 0.9em;
+    padding: 8px 15px;
+    border-radius: 20px;
+}
+
+/* ==================== ارزیابی کیفی ==================== */
+.evaluation-item select {
+    border-radius: 8px;
+    padding: 10px 15px;
+    border: 2px solid #e0e0e0;
+    transition: all 0.3s ease;
+}
+
+.evaluation-item select:focus {
+    border-color: #6a1b9a;
+    box-shadow: 0 0 0 0.25rem rgba(106, 27, 154, 0.25);
+    transform: translateY(-2px);
+}
+
+/* ==================== وضعیت خالی ==================== */
+.empty-state {
+    background: #f8f9fa;
+    border-radius: 15px;
+    border: 2px dashed #dee2e6;
+}
+
+/* ==================== responsive design ==================== */
+@media (max-width: 768px) {
+    .professor-avatar img {
+        width: 120px;
+        height: 120px;
+    }
+    
+    .nav-tabs-modern .nav-link {
+        padding: 10px 15px;
+        font-size: 0.9rem;
+        margin: 0 2px;
+    }
+    
+    .btn-lg {
+        padding: 10px 20px;
+        font-size: 1rem;
+    }
+    
+    .section-title {
+        font-size: 1.5rem;
+    }
+    
+    .star-rating-widget label {
+        font-size: 1.5rem;
+    }
+    
+    .star-rating-widget.evaluation-stars label {
+        font-size: 1.4rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .professor-card {
+        margin-bottom: 20px;
+    }
+    
+    .nav-tabs-modern {
+        flex-direction: column;
+    }
+    
+    .nav-tabs-modern .nav-item {
+        margin-bottom: 5px;
+        width: 100%;
+    }
+    
+    .nav-tabs-modern .nav-link {
+        border-radius: 10px;
+        text-align: center;
+        margin: 0;
+    }
+    
+    .limit-card {
+        margin-bottom: 15px;
+    }
+}
+
+/* ==================== انیمیشن‌ها ==================== */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.professor-card, .card-form, .review-card, .question-card {
+    animation: fadeIn 0.6s ease-out;
+}
+
+/* ==================== اسکرول بار زیبا ==================== */
+.bio-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.bio-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.bio-content::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+
+.bio-content::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+</style>
+<!-- Modal تأیید حذف ارزیابی -->
+{% if user_evaluation %}
+<div class="modal fade" id="deleteEvaluationModal" tabindex="-1" aria-labelledby="deleteEvaluationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteEvaluationModalLabel">
+                    <i class="bi bi-exclamation-triangle me-2"></i>تأیید حذف ارزیابی
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <i class="bi bi-trash text-danger" style="font-size: 3rem;"></i>
+                </div>
+                <h6 class="text-center mb-3">آیا مطمئن هستید که می‌خواهید ارزیابی خود را حذف کنید؟</h6>
+                <p class="text-muted text-center">
+                    این عمل غیرقابل بازگشت است و تمام امتیازهای داده شده حذف خواهند شد.
+                </p>
+                
+                <div class="alert alert-warning mt-3">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <small>می‌توانید بعداً مجدداً ارزیابی جدید ثبت کنید.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>انصراف
+                </button>
+                <form method="post" action="{% url 'reviews:delete_evaluation' professor.pk %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i>بله، حذف کن
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

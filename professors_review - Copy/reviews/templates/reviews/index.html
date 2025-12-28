@@ -1,0 +1,47 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ارزیابی اساتید</title>
+    <!-- فونت فارسی Vazir -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css" rel="stylesheet" type="text/css" />
+    <!-- فایل CSS راست‌چین -->
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+    <style>
+        h1, h2, h3 { margin-bottom: 10px; }
+        .professor { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 8px; background: #f9f9f9; }
+        .review { margin-top: 10px; padding: 10px; border-top: 1px dashed #ccc; }
+        .rating { color: #f39c12; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>وب سایت ارزیابی اساتید</h1>
+
+        {% for professor in professors %}
+        <div class="professor">
+            <h2>{{ professor.name }}</h2>
+            <p><strong>دپارتمان:</strong> {{ professor.department }}</p>
+            {% if professor.email %}
+            <p><strong>ایمیل:</strong> {{ professor.email }}</p>
+            {% endif %}
+
+            <h3>نظرات:</h3>
+            {% for review in professor.reviews.all %}
+            <div class="review">
+                <p><strong>{{ review.student_name }}</strong>:</p>
+                <p>{{ review.comment }}</p>
+                <p class="rating">امتیاز: {{ review.rating }}/5</p>
+            </div>
+            {% empty %}
+            <p>هنوز نظری ثبت نشده است.</p>
+            {% endfor %}
+        </div>
+        {% empty %}
+        <p>هیچ استادی ثبت نشده است.</p>
+        {% endfor %}
+    </div>
+</body>
+</html>
